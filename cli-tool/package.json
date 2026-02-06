@@ -1,20 +1,21 @@
 {
-  "name": "claude-code-templates",
-  "version": "1.28.13",
-  "description": "CLI tool to setup Claude Code configurations with framework-specific commands, automation hooks and MCP Servers for your projects",
+  "name": "copilot-learning-templates",
+  "version": "1.0.0",
+  "description": "CLI tool to setup Copilot Learning configurations with framework-specific commands, automation hooks and MCP Servers for your projects",
   "main": "src/index.js",
   "bin": {
-    "create-claude-config": "bin/create-claude-config.js",
-    "claude-code-templates": "bin/create-claude-config.js",
-    "claude-code-template": "bin/create-claude-config.js",
-    "claude-init": "bin/create-claude-config.js",
-    "cctemplates": "bin/create-claude-config.js",
-    "cct": "bin/create-claude-config.js",
-    "claude-setup": "bin/create-claude-config.js",
-    "claude-config": "bin/create-claude-config.js"
+    "create-copilot-config": "bin/create-copilot-config.js",
+    "copilot-code-templates": "bin/create-copilot-config.js",
+    "copilot-code-template": "bin/create-copilot-config.js",
+    "copilot-init": "bin/create-copilot-config.js",
+    "cctemplates": "bin/create-copilot-config.js",
+    "cct": "bin/create-copilot-config.js",
+    "copilot-setup": "bin/create-copilot-config.js",
+    "copilot-config": "bin/create-copilot-config.js",
+    "copilot-learning-templates": "bin/create-copilot-config.js"
   },
   "scripts": {
-    "start": "node bin/create-claude-config.js",
+    "start": "node bin/create-copilot-config.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -29,7 +30,7 @@
     "test:node": "make test-node",
     "test:all": "npm run test:coverage && make test",
     "dev:link": "npm link",
-    "dev:unlink": "npm unlink -g claude-code-templates",
+    "dev:unlink": "npm unlink -g copilot-learning-templates",
     "pretest:commands": "npm run dev:link",
     "analytics:start": "node src/analytics.js",
     "analytics:test": "npm run test:analytics",
@@ -39,8 +40,8 @@
     "security-audit:json": "node src/security-audit.js --json --output=security-report.json"
   },
   "keywords": [
-    "claude",
-    "claude-code",
+    "copilot",
+    "copilot-code",
     "ai",
     "configuration",
     "template",
@@ -61,7 +62,7 @@
     "rust",
     "go"
   ],
-  "author": "Claude Code Templates",
+  "author": "Copilot Learning Templates",
   "license": "MIT",
   "dependencies": {
     "boxen": "^5.1.2",
@@ -83,12 +84,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/davila7/claude-code-templates.git"
+    "url": "git+https://github.com/StudentCristian/copilot-learning-templates.git"
   },
   "bugs": {
-    "url": "https://github.com/davila7/claude-code-templates/issues"
+    "url": "https://github.com/StudentCristian/copilot-learning-templates/issues"
   },
-  "homepage": "https://github.com/davila7/claude-code-templates#readme",
+  "homepage": "https://github.com/StudentCristian/copilot-learning-templates#readme",
   "files": [
     "bin/",
     "src/",
