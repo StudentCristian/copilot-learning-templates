@@ -36,8 +36,8 @@ function showBanner() {
   console.log(  
     chalk.hex('#D97706')('🚀 Setup GitHub Copilot for learning programming 🚀') + 
     chalk.gray(`\n                             v${pkg.version}\n\n`) +  
-    chalk.blue('🌐 Components: ') + chalk.underline('https://educopilot.com') + '\n' + 
-    chalk.blue('📖 Documentation: ') + chalk.underline('https://docs.educopilot.com') + '\n' 
+    chalk.blue('🌐 Components: ') + chalk.underline('https://savantmind.com') + '\n' + 
+    chalk.blue('📖 Documentation: ') + chalk.underline('https://docs.savantmind.com') + '\n' 
   );  
 }  
   
@@ -58,7 +58,9 @@ program
   .option('--mcp <mcp>', 'install specific MCP component (supports comma-separated values)')  
     
   // Nuevas opciones para Copilot (AGREGAR)  
-  .option('--instruction <instruction>', 'install custom instruction file')  
+  .option('--instruction <instruction>', 'install custom instruction file (.github/instructions/)')  
+  .option('--copilot-instructions <name>', 'install copilot-instructions.md template (always-on instructions)')  
+  .option('--workspace-agents <file>', 'install AGENTS.md with workspace-wide agent definitions')  
   .option('--prompt <prompt>', 'install prompt file (slash command)')  
   .option('--learning-path <path>', 'install complete learning path')  
   .option('--level <level>', 'filter by level (beginner, intermediate, advanced)')  

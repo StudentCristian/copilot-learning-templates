@@ -111,7 +111,7 @@ async function createCopilotConfig(options = {}) {
   const targetDir = options.directory || process.cwd();
   
   // Handle multiple components installation (new approach)
-  if (options.agent || options.skill || options.mcp || options.instruction || options.prompt) {
+  if (options.agent || options.skill || options.mcp || options.instruction || options.prompt || options.copilotInstructions || options.workspaceAgents) {
     await installMultipleComponents(options, targetDir);
     return;
   }
@@ -140,6 +140,18 @@ async function createCopilotConfig(options = {}) {
     return;
   }
   
+  // Handle workspace agents (AGENTS.md)
+  if (options.workspaceAgents) {
+    await installWorkspaceAgents(options.workspaceAgents, targetDir, options);
+    return;
+  }
+
+  // Handle copilot-instructions.md installation (always-on instructions)
+  if (options.copilotInstructions) {
+    await installCopilotInstructions(options.copilotInstructions, targetDir, options);
+    return;
+  }
+
   // Handle instruction installation
   if (options.instruction) {
     await installInstruction(options.instruction, targetDir, options);
@@ -278,8 +290,8 @@ async function createCopilotConfig(options = {}) {
   console.log(chalk.white('  2. Customize the configuration for your project'));
   console.log(chalk.white('  3. Start using GitHub Copilot in VS Code'));
   console.log('');
-  console.log(chalk.blue('🌐 View all available components at: https://educopilot.com/'));
-  console.log(chalk.blue('📖 Read the complete documentation at: https://docs.educopilot.com/'));
+  console.log(chalk.blue('🌐 View all available components at: https://savantmind.com/'));
+  console.log(chalk.blue('📖 Read the complete documentation at: https://docs.savantmind.com/'));
   
   if (config.language !== 'common') {
     console.log(chalk.yellow(`💡 Language-specific features for ${config.language} have been configured`));
@@ -388,10 +400,10 @@ async function installIndividualPrompt(promptName, targetDir, options) {
     let githubUrl;
     if (promptName.includes('/')) {
       // Category/prompt format: learning/generate-exercises
-      githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/prompts/${promptName}.md`;
+      githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/prompts/${promptName}.prompt.md`;
     } else {
       // Direct prompt format: generate-exercises
-      githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/prompts/${promptName}.md`;
+      githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/prompts/${promptName}.prompt.md`;
     }
     
     console.log(chalk.gray(`📥 Downloading from GitHub (main branch)...`));
@@ -421,7 +433,7 @@ async function installIndividualPrompt(promptName, targetDir, options) {
       fileName = promptName;
     }
     
-    const targetFile = path.join(promptsDir, `${fileName}.md`);
+    const targetFile = path.join(promptsDir, `${fileName}.prompt.md`);
     
     await fs.writeFile(targetFile, promptContent, 'utf8');
     
@@ -593,23 +605,23 @@ async function getAvailableAgentsFromGitHub() {
       }
     }
     
-    // Fallback to educopilot.com API if local file not found
+    // Fallback to savantmind.com API if local file not found
     try {
-      // Try educopilot.com API first
-      const apiResponse = await fetch('https://educopilot.com/api/agents.json');
+      // Try savantmind.com API first
+      const apiResponse = await fetch('https://savantmind.com/api/agents.json');
       if (apiResponse.ok) {
         const apiData = await apiResponse.json();
         
         if (apiData.agents && Array.isArray(apiData.agents)) {
-          console.log(chalk.green(`✅ Loaded ${apiData.agents.length} agents from educopilot.com API`));
+          console.log(chalk.green(`✅ Loaded ${apiData.agents.length} agents from savantmind.com API`));
           return apiData.agents;
         }
       }
     } catch (apiError) {
-      console.warn('Could not fetch from educopilot.com, trying GitHub API...');
+      console.warn('Could not fetch from savantmind.com, trying GitHub API...');
     }
     
-    // If educopilot.com API fails, try GitHub API as secondary fallback
+    // If savantmind.com API fails, try GitHub API as secondary fallback
     console.log(chalk.yellow('⚠️  Falling back to GitHub API...'));
     const response = await fetch('https://api.github.com/repos/StudentCristian/copilot-learning-templates/contents/cli-tool/components/agents');
     if (!response.ok) {
@@ -820,7 +832,9 @@ async function installMultipleComponents(options, targetDir) {
       mcps: [],
       skills: [],
       instructions: [],
-      prompts: []
+      prompts: [],
+      copilotInstructions: null,  // Only one allowed (always-on file)
+      workspaceAgents: null       // Only one allowed (AGENTS.md)
     };
     
     // Parse comma-separated values for each component type
@@ -849,7 +863,17 @@ async function installMultipleComponents(options, targetDir) {
       components.prompts = promptsInput.split(',').map(p => p.trim()).filter(p => p);
     }
 
-    const totalComponents = components.agents.length + components.mcps.length + components.skills.length + components.instructions.length + components.prompts.length;
+    // Parse copilot-instructions (only one allowed)
+    if (options.copilotInstructions) {
+      components.copilotInstructions = options.copilotInstructions;
+    }
+
+    // Parse workspace agents (only one allowed)
+    if (options.workspaceAgents) {
+      components.workspaceAgents = options.workspaceAgents;
+    }
+
+    const totalComponents = components.agents.length + components.mcps.length + components.skills.length + components.instructions.length + components.prompts.length + (components.copilotInstructions ? 1 : 0) + (components.workspaceAgents ? 1 : 0);
     
     if (totalComponents === 0) {
       console.log(chalk.yellow('⚠️  No components specified to install.'));
@@ -862,6 +886,12 @@ async function installMultipleComponents(options, targetDir) {
     console.log(chalk.gray(`   MCPs: ${components.mcps.length}`));
     console.log(chalk.gray(`   Instructions: ${components.instructions.length}`));
     console.log(chalk.gray(`   Prompts: ${components.prompts.length}`));
+    if (components.copilotInstructions) {
+      console.log(chalk.gray(`   Copilot Instructions: ${components.copilotInstructions}`));
+    }
+    if (components.workspaceAgents) {
+      console.log(chalk.gray(`   Workspace Agents: ${components.workspaceAgents}`));
+    }
     
     // Counter for successfully installed components
     let successfullyInstalled = 0;
@@ -899,6 +929,20 @@ async function installMultipleComponents(options, targetDir) {
       console.log(chalk.gray(`   Installing prompt: ${prompt}`));
       const promptSuccess = await installIndividualPrompt(prompt, targetDir, { ...options, silent: true });
       if (promptSuccess) successfullyInstalled++;
+    }
+
+    // Install copilot-instructions.md (always-on)
+    if (components.copilotInstructions) {
+      console.log(chalk.gray(`   Installing copilot-instructions.md: ${components.copilotInstructions}`));
+      const ciSuccess = await installCopilotInstructions(components.copilotInstructions, targetDir, { ...options, silent: true });
+      if (ciSuccess) successfullyInstalled++;
+    }
+
+    // Install workspace agents (AGENTS.md)
+    if (components.workspaceAgents) {
+      console.log(chalk.gray(`   Installing AGENTS.md: ${components.workspaceAgents}`));
+      const waSuccess = await installWorkspaceAgents(components.workspaceAgents, targetDir, { ...options, silent: true });
+      if (waSuccess) successfullyInstalled++;
     }
     
     if (successfullyInstalled === totalComponents) {
@@ -1019,6 +1063,145 @@ async function installInstruction(instructionName, targetDir, options) {
 }
 
 /**
+ * Install copilot-instructions.md to .github/ (always-on instructions)
+ */
+async function installCopilotInstructions(instructionName, targetDir, options) {
+  console.log(chalk.blue(`📋 Installing copilot-instructions.md...`));
+
+  try {
+    // Download from GitHub
+    const githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/instructions/copilot-instructions/${instructionName}.md`;
+
+    console.log(chalk.gray(`📥 Downloading from GitHub (main branch)...`));
+
+    const response = await fetch(githubUrl);
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log(chalk.red(`❌ Copilot instructions "${instructionName}" not found`));
+        console.log(chalk.yellow('Available: beginner-friendly, python-focused, javascript-focused'));
+        return false;
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const instructionContent = await response.text();
+
+    // Create .github directory if it doesn't exist
+    const githubDir = path.join(targetDir, '.github');
+    await fs.ensureDir(githubDir);
+
+    // Write copilot-instructions.md (always this exact filename)
+    const targetFile = path.join(githubDir, 'copilot-instructions.md');
+
+    // Check if file already exists
+    if (await fs.pathExists(targetFile)) {
+      if (!options.yes) {
+        const { overwrite } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'overwrite',
+          message: 'copilot-instructions.md already exists. Overwrite?',
+          default: false
+        }]);
+        if (!overwrite) {
+          console.log(chalk.yellow('⏹️  Installation cancelled.'));
+          return false;
+        }
+      }
+    }
+
+    await fs.writeFile(targetFile, instructionContent, 'utf8');
+
+    if (!options.silent) {
+      console.log(chalk.green(`✅ copilot-instructions.md installed successfully!`));
+      console.log(chalk.cyan(`📁 Installed to: .github/copilot-instructions.md`));
+      console.log(chalk.cyan(`📦 Template: ${instructionName}`));
+      console.log(chalk.gray(`ℹ️  This file applies to ALL GitHub Copilot sessions (always-on)`));
+    }
+
+    // Track successful installation
+    trackingService.trackDownload('copilot-instructions', instructionName, {
+      installation_type: 'copilot_instructions',
+      target_directory: path.relative(process.cwd(), targetDir),
+      source: 'github_main'
+    });
+
+    return true;
+
+  } catch (error) {
+    console.log(chalk.red(`❌ Error installing copilot-instructions.md: ${error.message}`));
+    return false;
+  }
+}
+
+/**
+ * Install workspace agents (AGENTS.md) at workspace root
+ * AGENTS.md can be placed anywhere in the workspace and applies globally
+ */
+async function installWorkspaceAgents(agentsFile, targetDir, options) {
+  console.log(chalk.blue(`🤖 Installing workspace agents (AGENTS.md)...`));
+
+  try {
+    // Download AGENTS.md template from GitHub
+    const githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/workspace/${agentsFile}.md`;
+
+    console.log(chalk.gray(`📥 Downloading from GitHub (main branch)...`));
+
+    const response = await fetch(githubUrl);
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log(chalk.red(`❌ Workspace agents "${agentsFile}" not found`));
+        console.log(chalk.yellow('Available: python-tutors, javascript-tutors, beginner-team'));
+        return false;
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const agentsContent = await response.text();
+
+    // Write AGENTS.md to workspace root
+    const targetFile = path.join(targetDir, 'AGENTS.md');
+
+    // Check if file already exists
+    if (await fs.pathExists(targetFile)) {
+      if (!options.yes) {
+        const { overwrite } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'overwrite',
+          message: 'AGENTS.md already exists. Overwrite?',
+          default: false
+        }]);
+        if (!overwrite) {
+          console.log(chalk.yellow('⏹️  Installation cancelled.'));
+          return false;
+        }
+      }
+    }
+
+    await fs.writeFile(targetFile, agentsContent, 'utf8');
+
+    if (!options.silent) {
+      console.log(chalk.green(`✅ AGENTS.md installed successfully!`));
+      console.log(chalk.cyan(`📁 Installed to: AGENTS.md (workspace root)`));
+      console.log(chalk.cyan(`📦 Template: ${agentsFile}`));
+      console.log(chalk.gray(`ℹ️  Agents defined here are available for all files in the workspace`));
+    }
+
+    // Track successful installation
+    trackingService.trackDownload('workspace-agents', agentsFile, {
+      installation_type: 'workspace_agents',
+      target_directory: path.relative(process.cwd(), targetDir),
+      source: 'github_main'
+    });
+
+    return true;
+
+  } catch (error) {
+    console.log(chalk.red(`❌ Error installing workspace agents: ${error.message}`));
+    return false;
+  }
+}
+
+/**
  * Install a prompt file to .github/prompts/
  */
 async function installPromptFile(promptName, targetDir, options) {
@@ -1106,7 +1289,7 @@ async function installLearningPath(pathName, targetDir, options) {
     }
 
     console.log(chalk.cyan(`📁 Components installed to: .github/`));
-    console.log(chalk.blue(`🌐 View learning paths at: https://educopilot.com/learning-paths`));
+    console.log(chalk.blue(`🌐 View learning paths at: https://savantmind.com/learning-paths`));
 
     // Track successful learning path installation
     trackingService.trackDownload('learning-path', pathName, {
