@@ -465,10 +465,8 @@ async function installIndividualMCP(mcpName, targetDir, options) {
     // Support both category/mcp-name and direct mcp-name formats
     let githubUrl;
     if (mcpName.includes('/')) {
-      // Category/mcp format: database/mysql-integration
       githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/mcps/${mcpName}.json`;
     } else {
-      // Direct mcp format: web-fetch
       githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/mcps/${mcpName}.json`;
     }
     
@@ -487,52 +485,55 @@ async function installIndividualMCP(mcpName, targetDir, options) {
     const mcpConfigText = await response.text();
     const mcpConfig = JSON.parse(mcpConfigText);
 
-    // Remove description field from each MCP server before merging
-    if (mcpConfig.mcpServers) {
-      for (const serverName in mcpConfig.mcpServers) {
-        if (mcpConfig.mcpServers[serverName] && typeof mcpConfig.mcpServers[serverName] === 'object') {
-          delete mcpConfig.mcpServers[serverName].description;
-        }
+    // Extract servers from downloaded config (support both formats)
+    let newServers = mcpConfig.servers || mcpConfig.mcpServers || {};
+
+    // Remove description field from each server before merging
+    for (const serverName in newServers) {
+      if (newServers[serverName] && typeof newServers[serverName] === 'object') {
+        delete newServers[serverName].description;
       }
     }
     
-    // Check if .mcp.json exists in target directory
-    const targetMcpFile = path.join(targetDir, '.mcp.json');
+    // VS Code uses .vscode/mcp.json with "servers" key
+    const vscodeDir = path.join(targetDir, '.vscode');
+    await fs.ensureDir(vscodeDir);
+    const targetMcpFile = path.join(vscodeDir, 'mcp.json');
     let existingConfig = {};
     
     if (await fs.pathExists(targetMcpFile)) {
       existingConfig = await fs.readJson(targetMcpFile);
-      console.log(chalk.yellow('📝 Existing .mcp.json found, merging configurations...'));
+      console.log(chalk.yellow('📝 Existing .vscode/mcp.json found, merging configurations...'));
     }
     
-    // Merge configurations with deep merge for mcpServers
+    // Merge into "servers" key (VS Code format)
+    const mergedServers = {
+      ...(existingConfig.servers || {}),
+      ...newServers
+    };
+
     const mergedConfig = {
       ...existingConfig,
-      ...mcpConfig
+      servers: mergedServers
     };
-    
-    // Deep merge mcpServers specifically to avoid overwriting existing servers
-    if (existingConfig.mcpServers && mcpConfig.mcpServers) {
-      mergedConfig.mcpServers = {
-        ...existingConfig.mcpServers,
-        ...mcpConfig.mcpServers
-      };
-    }
+
+    // Remove old mcpServers key if it exists
+    delete mergedConfig.mcpServers;
     
     // Write the merged configuration
     await fs.writeJson(targetMcpFile, mergedConfig, { spaces: 2 });
     
     if (!options.silent) {
       console.log(chalk.green(`✅ MCP "${mcpName}" installed successfully!`));
-      console.log(chalk.cyan(`📁 Configuration merged into: ${path.relative(targetDir, targetMcpFile)}`));
+      console.log(chalk.cyan(`📁 Configuration merged into: .vscode/mcp.json`));
       console.log(chalk.cyan(`📦 Downloaded from: ${githubUrl}`));
     }
     
     // Track successful MCP installation
     trackingService.trackDownload('mcp', mcpName, {
       installation_type: 'individual_mcp',
-      merged_with_existing: existingConfig !== null,
-      servers_count: Object.keys(mergedConfig.mcpServers || {}).length,
+      merged_with_existing: Object.keys(existingConfig).length > 0,
+      servers_count: Object.keys(mergedServers).length,
       source: 'github_main'
     });
     
@@ -1070,7 +1071,7 @@ async function installCopilotInstructions(instructionName, targetDir, options) {
 
   try {
     // Download from GitHub
-    const githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/instructions/copilot-instructions/${instructionName}.md`;
+    const githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/instructions/copilot-instructions/${instructionName}/copilot-instructions.md`;
 
     console.log(chalk.gray(`📥 Downloading from GitHub (main branch)...`));
 
@@ -1142,7 +1143,7 @@ async function installWorkspaceAgents(agentsFile, targetDir, options) {
 
   try {
     // Download AGENTS.md template from GitHub
-    const githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/workspace/${agentsFile}.md`;
+    const githubUrl = `https://raw.githubusercontent.com/StudentCristian/copilot-learning-templates/main/cli-tool/components/workspace/${agentsFile}/AGENTS.md`;
 
     console.log(chalk.gray(`📥 Downloading from GitHub (main branch)...`));
 
