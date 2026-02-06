@@ -1,11 +1,11 @@
 {
-  "name": "claude-code-templates",
-  "version": "1.21.14",
-  "description": "Component templates and tracking system for Claude Code",
+  "name": "copilot-learning-templates",
+  "version": "1.0.0",
+  "description": "Component templates and tracking system for Copilot Learning",
   "main": "cli-tool/src/index.js",
   "bin": {
-    "claude-code-templates": "cli-tool/bin/create-claude-config.js",
-    "cct": "cli-tool/bin/create-claude-config.js"
+    "copilot-learning-templates": "cli-tool/bin/create-copilot-learning-config.js",
+    "cct": "cli-tool/bin/create-copilot-learning-config.js"
   },
   "scripts": {
     "dev": "vercel dev",
@@ -37,12 +37,12 @@
     "@vercel/node": "^3.0.0"
   },
   "keywords": [
-    "claude-code",
+    "copilot-learning",
     "templates",
     "components",
     "tracking",
     "analytics"
   ],
-  "author": "Claude Code Templates",
+  "author": "Copilot Learning Templates",
   "license": "MIT"
 }

@@ -67,3 +67,7 @@ analysis/
 
 # OpenSpec (local workflow artifacts)
 openspec/
+
+# Local markdown files
+commands.md
+AGENTS.md
